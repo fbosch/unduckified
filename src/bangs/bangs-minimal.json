@@ -1,0 +1,154 @@
+[
+  {
+    "s": "Amazon.com",
+    "d": "www.amazon.com",
+    "t": "a",
+    "ts": [
+      "amazon",
+      "amus",
+      "amz",
+      "aus",
+      "az",
+      "buy",
+      "price"
+    ],
+    "u": "https://www.amazon.com/s?k={{{s}}}",
+    "c": "Shopping",
+    "sc": "Online"
+  },
+  {
+    "s": "Google",
+    "d": "www.google.com",
+    "t": "g",
+    "ts": [
+      "google",
+      "п",
+      "goog"
+    ],
+    "u": "https://www.google.com/search?q={{{s}}}"
+  },
+  {
+    "s": "GitHub",
+    "d": "github.com",
+    "t": "gh",
+    "ts": [
+      "git",
+      "github"
+    ],
+    "u": "https://github.com/search?q={{{s}}}",
+    "c": "Tech",
+    "sc": "Programming"
+  },
+  {
+    "s": "YouTube",
+    "d": "www.youtube.com",
+    "t": "yt",
+    "ts": [
+      "ty",
+      "watch",
+      "youtube",
+      "you",
+      "ytb",
+      "υτ"
+    ],
+    "u": "https://www.youtube.com/results?search_query={{{s}}}",
+    "c": "Multimedia",
+    "sc": "Video"
+  },
+  {
+    "s": "IMDB",
+    "d": "www.imdb.com",
+    "t": "imdb",
+    "u": "https://www.imdb.com/find?s=all&q={{{s}}}",
+    "c": "Multimedia",
+    "sc": "Movies"
+  },
+  {
+    "s": "Steam",
+    "d": "store.steampowered.com",
+    "t": "steam",
+    "ts": [
+      "steme",
+      "ste"
+    ],
+    "u": "https://store.steampowered.com/search/?term={{{s}}}",
+    "c": "Entertainment",
+    "sc": "Games (general)"
+  },
+  {
+    "s": "Reddit",
+    "d": "www.reddit.com",
+    "t": "reddit",
+    "ts": [
+      "r"
+    ],
+    "u": "https://www.reddit.com/search?q={{{s}}}",
+    "c": "News",
+    "sc": "Aggregators"
+  },
+  {
+    "s": "Discord Invite",
+    "d": "discordapp.com",
+    "t": "discord",
+    "u": "https://discordapp.com/invite/{{{s}}}",
+    "c": "Online Services",
+    "sc": "Social"
+  },
+  {
+    "s": "Netflix",
+    "d": "www.netflix.com",
+    "t": "netflix",
+    "ts": [
+      "net",
+      "nf"
+    ],
+    "u": "https://www.netflix.com/search?q={{{s}}}",
+    "c": "Entertainment",
+    "sc": "Movies"
+  },
+  {
+    "s": "Twitter",
+    "d": "twitter.com",
+    "t": "twitter",
+    "ts": [
+      "twit",
+      "twid",
+      "tweet"
+    ],
+    "u": "https://twitter.com/search?q={{{s}}}",
+    "c": "Online Services",
+    "sc": "Social"
+  },
+  {
+    "s": "Facebook",
+    "d": "www.facebook.com",
+    "t": "facebook",
+    "ts": [
+      "fb",
+      "fbk"
+    ],
+    "u": "https://www.facebook.com/s.php?q={{{s}}}",
+    "c": "Online Services",
+    "sc": "Social"
+  },
+  {
+    "s": "Wikipedia",
+    "d": "en.wikipedia.org",
+    "t": "wikipedia",
+    "ts": [
+      "wiki",
+      "w",
+      "encyclopedia",
+      "wen",
+      "enwiki",
+      "wikien",
+      "w.en",
+      "wi",
+      "wk",
+      "we"
+    ],
+    "u": "https://en.wikipedia.org/w/index.php?search={{{s}}}",
+    "c": "Research",
+    "sc": "Reference"
+  }
+]

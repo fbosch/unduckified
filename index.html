@@ -1,14 +1,25 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/gif" href="/goose.gif" />
-		<link
-			rel="search"
-			type="application/opensearchdescription+xml"
-			title="Unduck"
-			href="/opensearch.xml"
-		/>
+		<meta name="robots" content="noindex" />
+
+		<!-- Resource hints for faster loading -->
+		<link rel="preload" href="/src/main.ts" as="script" />
+		<link rel="preload" href="/global.css" as="style" />
+
+		<!-- DNS prefetch for common redirect destinations -->
+		<link rel="dns-prefetch" href="//www.google.com" />
+		<link rel="dns-prefetch" href="//www.youtube.com" />
+		<link rel="dns-prefetch" href="//www.wikipedia.org" />
+		<link rel="dns-prefetch" href="//github.com" />
+		<link rel="dns-prefetch" href="//www.npmjs.com" />
+		<link rel="dns-prefetch" href="//www.kagi.com" />
+
+		<!-- Preconnect to critical domains -->
+		<link rel="preconnect" href="//www.google.com" />
+		<link rel="preconnect" href="//www.youtube.com" />
 		<style>
 			:root {
 				/* Light mode colors */
@@ -71,11 +82,24 @@
 			}
 		</style>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Unduck</title>
+		<title>Unduckified - Fast DuckDuckGo Bangs</title>
 		<meta
 			name="description"
-			content="A better default search engine (with bangs!)"
+			content="Lightning-fast DuckDuckGo bang redirects. Client-side redirects for maximum speed."
 		/>
+
+		<!-- PWA Meta Tags -->
+		<meta name="theme-color" content="#1a1a1a" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+		<meta name="apple-mobile-web-app-title" content="Unduckified" />
+
+		<!-- Performance Hints -->
+		<meta http-equiv="Accept-CH" content="DPR, Viewport-Width, Width" />
+		<meta name="format-detection" content="telephone=no" />
+
+		<!-- Compression hints -->
+		<meta http-equiv="Accept-Encoding" content="gzip, deflate, br" />
 	</head>
 	<body>
 		<div id="app"></div>

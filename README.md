@@ -7,6 +7,7 @@
 ## Quick Start
 
 Add this URL as a custom search engine to your browser to use DuckDuckGo's bangs, but faster:
+
 ```
 https://s.dunkirk.sh?q=%s
 ```
@@ -25,11 +26,11 @@ This is primarily my personal fork to experiment with PWAs but I do have a few i
 
 - [x] Bangs
 - [x] Dark Mode
-- [x] Settings (for things like disabling search history and changing default bang)
-- [x] Search counter
+- [x] Settings (for changing default bang and custom bangs)
+- [x] ~~Search counter~~ (removed to reduce bundle size)
 - [x] [OpenSearch](https://developer.mozilla.org/en-US/docs/Web/XML/Guides/OpenSearch) support
-- [x] Search History (clearable, all local, and disabled by default ofc)
-- [x] Fancy sounds (disabled if you have `prefers-reduced-motion` set; sounds only account for `198.5 KB` of the `717.4 KB` total size)
+- [x] ~~Search History~~ (removed to reduce bundle size)
+- [x] ~~Fancy sounds~~ (removed to reduce bundle size)
 - [x] Cute little text animations
 - [x] Auto updating bangs file! (I'm using a [GitHub Action](https://github.com/taciturnaxolotl/unduckified/actions/workflows/update-bangs.yaml) to update the bangs file every 24 hours)
 - [x] Hashmapped bangs for faster searching
@@ -39,14 +40,16 @@ This is primarily my personal fork to experiment with PWAs but I do have a few i
 - [x] Quick settings (e.g. `!settings` or `!` will take you to the settings page)
 - [x] Custom local bangs! (thanks to [@ayoubabedrabbo@mastodon.social](https://mastodon.social/@ayoubabedrabbo/114114311682366314) for the suggestion)
 - [x] Kagi bangs! We are able to grab the bangs from [kagisearch/bangs](https://github.com/kagisearch/bangs/) and Kagi is far more responsive than DuckDuckGo when it comes to updating their bangs.
+- [x] Manual bangs update script! Run `bun run update-bangs` to manually update bangs from Kagi's repository.
 
 I would love to add these but they don't seem possible / feasible at the moment:
+
 - [ ] ~Search suggestions~ (as far as I can tell this essentially impossible to do natively with either firefox or chrome; please correct me if I'm wrong though. In this case I would very much love to be wrong)
 - [x] ~Weekly bang checks to ensure that all bangs still work and excludes those that don't~ this ended up being unreliable because of cloudflare rate limiting and switching to kagi bangs helped a lot with this
 
 ## Fancy smancy technical graphs 😮
 
-The total size of the app is `717.4 KB` (one time download)
+The total size of the app is `518.9 KB` (one time download)
 
 ### Resource Breakdown
 
@@ -55,8 +58,8 @@ graph TD
     subgraph Resources by Size
         A[index-B8HLUc3J.js<br/>contains all the ddg bangs<br/>482.5 KB]
         B[Font File<br/>25.1 KB]
-        subgraph Audio Files
-            C[Audio Files<br/>198.5 KB Total]
+        subgraph Removed
+            C[Audio Files<br/>Removed for Performance]
         end
         subgraph Small Assets
             D[SVGs & CSS<br/>~11 KB]
@@ -71,25 +74,25 @@ gantt
     title Network Waterfall Chart
     dateFormat  HH:mm:ss.SSS
     axisFormat  %L
-    
+
     section Initial HTML
     GET / (2.8 KB)           :done, h1, 10:07:29.038, 208ms
-    
+
     section JavaScript
     beacon.min.js            :done, b1, 10:07:29.279, 0ms
     index-B8HLUc3J.js (482.5 KB) :done, j1, 10:07:29.286, 32ms
     registerSW.js (2.2 KB)   :done, j2, 10:07:29.287, 60ms
     beacon.min.js (2nd)      :done, b2, 10:07:29.383, 0ms
-    
+
     section Styles
     Main CSS (3.8 KB)        :done, c2, 10:07:29.287, 60ms
     Font File (25.1 KB)      :done, f1, 10:07:29.379, 46ms
-    
+
     section Assets
     gear.svg (2.5 KB)        :done, s1, 10:07:29.494, 58ms
     clipboard.svg (2.4 KB)   :done, s2, 10:07:29.495, 63ms
     search.svg (2.4 KB)      :done, s3, 10:07:29.589, 32ms
-    
+
     section Audio
     heavier-tick-sprite.mp3 (22.4 KB) :done, a1, 10:07:29.495, 33ms
     toggle-off.mp3 (34.3 KB) :done, a2, 10:07:29.495, 32ms
@@ -99,6 +102,43 @@ gantt
     foot-switch.mp3 (34.3 KB):done, a6, 10:07:29.498, 38ms
 ```
 
+## Development
+
+### Updating Bangs
+
+The bangs are automatically updated daily via GitHub Actions, but you can also update them manually:
+
+```bash
+# Update bangs from Kagi's repository
+bun run update-bangs
+
+# Filter bangs to reduce bundle size (optional)
+bun run filter-bangs
+
+# Build the project with updated bangs
+bun run build
+```
+
+### Bang Filtering Options
+
+To reduce bundle size, you can filter bangs to include only the most essential ones:
+
+- **Minimal** (~12 bangs, 3KB): Only the most essential triggers (Google, YouTube, Wikipedia, Steam, Twitch, Discord)
+- **Essential** (~7,000 bangs, 1.4MB): Popular triggers + essential categories + gaming bangs
+- **Extended** (~10,000 bangs, 2MB): Essential + shopping, multimedia, news
+- **Full** (~11,000 bangs, 2.1MB): Complete Kagi bangs collection
+
+The default is **Essential** which includes gaming bangs and provides a good balance of functionality and performance.
+
+### Available Scripts
+
+- `bun run dev` - Start development server
+- `bun run build` - Build for production
+- `bun run preview` - Preview production build
+- `bun run update-bangs` - Update bangs from Kagi repository
+- `bun run filter-bangs` - Filter bangs to reduce bundle size
+- `bun run hash` - Generate hashbang.ts from bangs.json
+- `bun run check` - Test bangs functionality
 
 ## Screenshots
 

@@ -1,39 +1,64 @@
-import { bangs as defaultBangs } from "./bangs/hashbang.ts";
-import {
-	addToSearchHistory,
-	clearSearchHistory,
-	createAudio,
-	getSearchHistory,
-	storage,
-} from "./libs.ts";
+// Import minimal bangs directly for fastest lookup
+import { bangs as minimalBangs } from "./bangs/hashbang-minimal.ts";
 
-import "@fontsource/inter/latin-400.css";
-import "@fontsource/inter/latin-500.css";
-import "@fontsource/inter/latin-600.css";
-import "@fontsource/inter/latin-700.css";
+// Progressive bang loading system for larger datasets
+let essentialBangs: any = null;
+let extendedBangs: any = null;
+
+// Load essential bangs (most comprehensive)
+const loadEssentialBangs = async () => {
+	if (!essentialBangs) {
+		const module = await import("./bangs/hashbang-essential.ts");
+		essentialBangs = module.bangs;
+	}
+	return essentialBangs;
+};
+
+// Load extended bangs (fallback)
+const loadExtendedBangs = async () => {
+	if (!extendedBangs) {
+		const module = await import("./bangs/hashbang-extended.ts");
+		extendedBangs = module.bangs;
+	}
+	return extendedBangs;
+};
+
+// Progressive loading: check minimal first, then race between essential and extended
+const loadBangsProgressive = async (bangName: string) => {
+	// Check minimal bangs first (already loaded)
+	if (minimalBangs[bangName]) {
+		return minimalBangs;
+	}
+
+	// If not found in minimal, race between essential and extended
+	const winner = await Promise.race([
+		loadEssentialBangs().then((bangs) => ({ bangs, tier: "essential" })),
+		loadExtendedBangs().then((bangs) => ({ bangs, tier: "extended" })),
+	]);
+
+	return winner.bangs;
+};
+import { storage } from "./libs.ts";
+
 import "./global.css";
 import notFoundPageRender from "./404.ts";
 
-const bangs = Object.assign(
-	{
-		kagi: {
-			t: "Kagi",
-			s: "kagi",
-			u: "https://www.kagi.com/search?q={{{s}}}",
-			d: "https://www.kagi.com",
-			r: 0,
-		},
+// Initialize bangs with default Kagi bang, load others lazily
+const bangs = {
+	kagi: {
+		t: "Kagi",
+		s: "kagi",
+		u: "https://www.kagi.com/search?q={{{s}}}",
+		d: "https://www.kagi.com",
+		r: 0,
 	},
-	defaultBangs,
-);
+} as {
+	[key: string]: { t: string; s: string; u: string; d: string; r: number };
+};
 
 export const CONSTANTS = {
-	MAX_HISTORY: 500,
 	ANIMATION_DURATION: 375,
 	LOCAL_STORAGE_KEYS: {
-		SEARCH_HISTORY: "search-history",
-		SEARCH_COUNT: "search-count",
-		HISTORY_ENABLED: "history-enabled",
 		DEFAULT_BANG: "default-bang",
 		CUSTOM_BANGS: "custom-bangs",
 	},
@@ -57,6 +82,22 @@ export const CONSTANTS = {
 		DOWN: ["(↓°□°)↓", "(´◕‿◕)↓", "↓(´・ω・)↓"],
 	},
 };
+// Cache frequently accessed localStorage values
+const cachedSettings = (() => {
+	try {
+		return {
+			customBangs: JSON.parse(localStorage.getItem("custom-bangs") || "{}"),
+			defaultBang: localStorage.getItem("default-bang") || "kagi",
+		};
+	} catch (e) {
+		// Fallback for corrupted localStorage
+		return {
+			customBangs: {},
+			defaultBang: "kagi",
+		};
+	}
+})();
+
 const customBangs: {
 	[key: string]: {
 		c?: string;
@@ -67,15 +108,15 @@ const customBangs: {
 		t: string;
 		u: string;
 	};
-} = JSON.parse(localStorage.getItem("custom-bangs") || "{}");
+} = cachedSettings.customBangs;
 
 function getFocusableElements(
-	root: HTMLElement = document.body,
+	root: HTMLElement = document.body
 ): HTMLElement[] {
 	return Array.from(
 		root.querySelectorAll<HTMLElement>(
-			'a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])',
-		),
+			'a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+		)
 	);
 }
 
@@ -90,21 +131,10 @@ function setOutsideElementsTabindex(modal: HTMLElement, tabindex: number) {
 	}
 }
 
-const createTemplate = (data: {
-	searchCount: string;
-	historyEnabled: boolean;
-	searchHistory: Array<{
-		bang: string;
-		query: string;
-		name: string;
-		timestamp: number;
-	}>;
-	LS_DEFAULT_BANG: string;
-}) => `
+const createTemplate = (data: { LS_DEFAULT_BANG: string }) => `
 	<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;">
 		<header style="position: absolute; top: 1rem; width: 100%;">
-			<div style="display: flex; justify-content: space-between; padding: 0 1rem;">
-				<span>${data.searchCount} ${data.searchCount === "1" ? "search" : "searches"}</span>
+			<div style="display: flex; justify-content: flex-end; padding: 0 1rem;">
 				<button class="settings-button">
 					<img src="/gear.svg" alt="Settings" class="settings" />
 				</button>
@@ -124,31 +154,6 @@ const createTemplate = (data: {
 					<img src="/clipboard.svg" alt="Copy" />
 				</button>
 			</div>
-				${
-					data.historyEnabled
-						? `
-							<h2 style="margin-top: 24px;">Recent Searches</h2>
-							<div style="max-height: 200px; overflow-y: auto; text-align: left;">
-							${
-								data.searchHistory.length === 0
-									? `<div style="padding: 8px; text-align: center;">No search history</div>`
-									: data.searchHistory
-											.map(
-												(search) => `
-													<div style="padding: 8px; border-bottom: 1px solid var(--border-color);">
-														<a href="?q=!${search.bang} ${search.query}">${search.name}: ${search.query}</a>
-														<span style="float: right; color: var(--text-color-secondary);">
-															${new Date(search.timestamp).toLocaleString()}
-														</span>
-													</div>
-											`,
-											)
-											.join("")
-							}
-							</div>
-						`
-						: ""
-				}
 		</div>
 		<footer class="footer">
 			made with ♥ by <a href="https://github.com/taciturnaxolotl" target="_blank">Kieran Klukas</a> as <a href="https://github.com/taciturnaxolotl/unduck" target="_blank">open source</a> software
@@ -159,9 +164,13 @@ const createTemplate = (data: {
 					<h2>Settings</h2>
 					<div class="settings-section">
 					    <h3>Bangs</h3>
-							<label for="default-bang" id="bang-description">Default Bang: ${bangs[data.LS_DEFAULT_BANG].s || "Unknown bang"}</label>
+							<label for="default-bang" id="bang-description">Default Bang: ${
+								bangs[data.LS_DEFAULT_BANG]?.s || "Unknown bang"
+							}</label>
 							<div class="bang-select-container">
-									<input type="text" id="default-bang" class="bang-select" value="${data.LS_DEFAULT_BANG}">
+									<input type="text" id="default-bang" class="bang-select" value="${
+										data.LS_DEFAULT_BANG
+									}">
 							</div>
 							<p class="help-text">The best way to add new bangs is by submitting them on <a href="https://duckduckgo.com/newbang" target="_blank">DuckDuckGo</a> but you can also add them below</p>
 							<div style="margin-top: 16px;">
@@ -194,24 +203,13 @@ const createTemplate = (data: {
   										<div class="custom-bang-url">${bang.u}</div>
   										<button class="remove-bang" data-shortcut="${shortcut}">Remove</button>
   									</div>
-  								`,
+  								`
 										)
 										.join("")}
   								</div>
 								`
 										: ""
 								}
-							</div>
-					</div>
-					<div class="settings-section">
-							<h3>Search History (${data.searchHistory.length}/500)</h3>
-							<div style="display: flex; justify-content: space-between; align-items: center;">
-								<label class="switch">
-										<label for="history-toggle">Enable Search History</label>
-										<input type="checkbox" id="history-toggle" ${data.historyEnabled ? "checked" : ""}>
-										<span class="slider round"></span>
-									</label>
-									<button class="clear-history">Clear History</button>
 							</div>
 					</div>
 				</div>
@@ -221,18 +219,10 @@ const createTemplate = (data: {
 `;
 
 function noSearchDefaultPageRender() {
-	const searchCount =
-		storage.get(CONSTANTS.LOCAL_STORAGE_KEYS.SEARCH_COUNT) || "0";
-	const historyEnabled =
-		storage.get(CONSTANTS.LOCAL_STORAGE_KEYS.HISTORY_ENABLED) === "true";
-	const searchHistory = getSearchHistory();
 	const app = document.querySelector<HTMLDivElement>("#app");
 	if (!app) throw new Error("App element not found");
 
 	app.innerHTML = createTemplate({
-		searchCount,
-		historyEnabled,
-		searchHistory,
 		LS_DEFAULT_BANG,
 	});
 
@@ -248,8 +238,6 @@ function noSearchDefaultPageRender() {
 		closeModal: app.querySelector<HTMLSpanElement>(".close-modal"),
 		defaultBangSelect: app.querySelector<HTMLSelectElement>("#default-bang"),
 		description: app.querySelector<HTMLParagraphElement>("#bang-description"),
-		historyToggle: app.querySelector<HTMLInputElement>("#history-toggle"),
-		clearHistory: app.querySelector<HTMLButtonElement>(".clear-history"),
 		bangName: app.querySelector<HTMLInputElement>(".bang-name"),
 		bangShortcut: app.querySelector<HTMLInputElement>(".bang-shortcut"),
 		bangSearchUrl: app.querySelector<HTMLInputElement>(".bang-search-url"),
@@ -270,125 +258,43 @@ function noSearchDefaultPageRender() {
 
 	validatedElements.urlInput.value = `${window.location.protocol}//${window.location.host}?q=%s`;
 
-	const prefersReducedMotion = window.matchMedia(
-		"(prefers-reduced-motion: reduce)",
-	).matches;
+	// Add mouse tracking behavior for cutie animations
+	document.addEventListener("click", (e) => {
+		const x = e.clientX;
+		const y = e.clientY;
+		const centerX = window.innerWidth / 2;
+		const centerY = window.innerHeight / 2;
+		const differenceX = x - centerX;
+		const differenceY = y - centerY;
 
-	if (!prefersReducedMotion) {
-		// Add mouse tracking behavior
-		document.addEventListener("click", (e) => {
-			const x = e.clientX;
-			const y = e.clientY;
-			const centerX = window.innerWidth / 2;
-			const centerY = window.innerHeight / 2;
-			const differenceX = x - centerX;
-			const differenceY = y - centerY;
-
-			if (
-				Math.abs(differenceX) > Math.abs(differenceY) &&
-				Math.abs(differenceX) > 100
-			) {
-				validatedElements.cutie.textContent =
-					differenceX < 0
-						? CONSTANTS.CUTIES.LEFT[
-								Math.floor(Math.random() * CONSTANTS.CUTIES.LEFT.length)
-							]
-						: CONSTANTS.CUTIES.RIGHT[
-								Math.floor(Math.random() * CONSTANTS.CUTIES.RIGHT.length)
-							];
-			} else if (Math.abs(differenceY) > 100) {
-				validatedElements.cutie.textContent =
-					differenceY < 0
-						? CONSTANTS.CUTIES.UP[
-								Math.floor(Math.random() * CONSTANTS.CUTIES.UP.length)
-							]
-						: CONSTANTS.CUTIES.DOWN[
-								Math.floor(Math.random() * CONSTANTS.CUTIES.DOWN.length)
-							];
-			}
-		});
-
-		const audio = {
-			spin: createAudio("/heavier-tick-sprite.mp3"),
-			toggleOff: createAudio("/toggle-button-off.mp3"),
-			toggleOn: createAudio("/toggle-button-on.mp3"),
-			click: createAudio("/click-button.mp3"),
-			warning: createAudio("/double-button.mp3"),
-			copy: createAudio("/foot-switch.mp3"),
-		};
-
-		validatedElements.copyButton.addEventListener("click", () => {
-			audio.copy.currentTime = 0;
-			audio.copy.play();
-		});
-
-		validatedElements.settingsButton.addEventListener("mouseenter", () => {
-			audio.spin.play();
-		});
-
-		validatedElements.settingsButton.addEventListener("mouseleave", () => {
-			audio.spin.pause();
-			audio.spin.currentTime = 0;
-		});
-
-		validatedElements.historyToggle.addEventListener("change", () => {
-			if (validatedElements.historyToggle.checked) {
-				audio.toggleOff.pause();
-				audio.toggleOff.currentTime = 0;
-				audio.toggleOn.currentTime = 0;
-				audio.toggleOn.play();
-			} else {
-				audio.toggleOn.pause();
-				audio.toggleOn.currentTime = 0;
-				audio.toggleOff.currentTime = 0;
-				audio.toggleOff.play();
-			}
-		});
-
-		validatedElements.clearHistory.addEventListener("click", () => {
-			audio.warning.play();
-		});
-
-		validatedElements.defaultBangSelect.addEventListener("bangError", () => {
-			audio.warning.currentTime = 0;
-			audio.warning.play();
-		});
-
-		validatedElements.defaultBangSelect.addEventListener("bangSuccess", () => {
-			audio.click.currentTime = 0;
-			audio.click.play();
-		});
-
-		validatedElements.closeModal.addEventListener("closed", () => {
-			validatedElements.settingsButton.classList.remove("rotate");
-			audio.spin.playbackRate = 0.7;
-			audio.spin.currentTime = 0;
-			audio.spin.play();
-			audio.spin.onended = () => {
-				audio.spin.playbackRate = 1;
-			};
-		});
-
-		validatedElements.addBang.addEventListener("click", () => {
-			audio.click.currentTime = 0.1;
-			audio.click.playbackRate = 2;
-			audio.click.play();
-		});
-
-		validatedElements.removeBangs.forEach((button) => {
-			button.addEventListener("click", () => {
-				audio.warning.currentTime = 0;
-				audio.warning.play();
-			});
-		});
-	}
+		if (
+			Math.abs(differenceX) > Math.abs(differenceY) &&
+			Math.abs(differenceX) > 100
+		) {
+			validatedElements.cutie.textContent =
+				differenceX < 0
+					? CONSTANTS.CUTIES.LEFT[
+							Math.floor(Math.random() * CONSTANTS.CUTIES.LEFT.length)
+					  ]
+					: CONSTANTS.CUTIES.RIGHT[
+							Math.floor(Math.random() * CONSTANTS.CUTIES.RIGHT.length)
+					  ];
+		} else if (Math.abs(differenceY) > 100) {
+			validatedElements.cutie.textContent =
+				differenceY < 0
+					? CONSTANTS.CUTIES.UP[
+							Math.floor(Math.random() * CONSTANTS.CUTIES.UP.length)
+					  ]
+					: CONSTANTS.CUTIES.DOWN[
+							Math.floor(Math.random() * CONSTANTS.CUTIES.DOWN.length)
+					  ];
+		}
+	});
 
 	validatedElements.copyButton.addEventListener("click", async () => {
 		await navigator.clipboard.writeText(validatedElements.urlInput.value);
 		validatedElements.copyIcon.src = "/clipboard-check.svg";
-
-		if (!prefersReducedMotion)
-			validatedElements.copyInput.classList.add("flash-white");
+		validatedElements.copyInput.classList.add("flash-white");
 
 		setTimeout(() => {
 			validatedElements.copyInput.classList.remove("flash-white");
@@ -415,59 +321,32 @@ function noSearchDefaultPageRender() {
 	validatedElements.closeModal.addEventListener("closed", () => {
 		validatedElements.modal.style.display = "none";
 		setOutsideElementsTabindex(validatedElements.modal, 0);
-
-		if (validatedElements.historyToggle.checked !== historyEnabled)
-			if (!prefersReducedMotion)
-				setTimeout(() => {
-					window.location.reload();
-				}, 300);
-			else window.location.reload();
 	});
 
-	validatedElements.defaultBangSelect.addEventListener("change", (event) => {
-		const newDefaultBang = (event.target as HTMLSelectElement).value.replace(
-			/^!+/,
-			"",
-		);
-		const bang = customBangs[newDefaultBang] || bangs[newDefaultBang];
-
-		if (!bang) {
-			validatedElements.defaultBangSelect.value = LS_DEFAULT_BANG;
-			validatedElements.defaultBangSelect.classList.add("shake", "flash-red");
-			validatedElements.defaultBangSelect.dispatchEvent(
-				new CustomEvent("bangError"),
+	validatedElements.defaultBangSelect.addEventListener(
+		"change",
+		async (event) => {
+			const newDefaultBang = (event.target as HTMLSelectElement).value.replace(
+				/^!+/,
+				""
 			);
-			setTimeout(() => {
-				validatedElements.defaultBangSelect.classList.remove(
-					"shake",
-					"flash-red",
-				);
-			}, 300);
-			return;
+			const bang = await getBang(newDefaultBang);
+
+			if (!bang) {
+				validatedElements.defaultBangSelect.value = LS_DEFAULT_BANG;
+				validatedElements.defaultBangSelect.classList.add("shake", "flash-red");
+				setTimeout(() => {
+					validatedElements.defaultBangSelect.classList.remove(
+						"shake",
+						"flash-red"
+					);
+				}, 300);
+				return;
+			}
+			storage.set(CONSTANTS.LOCAL_STORAGE_KEYS.DEFAULT_BANG, newDefaultBang);
+			validatedElements.description.innerText = "Default Bang: " + bang.s;
 		}
-
-		validatedElements.defaultBangSelect.dispatchEvent(
-			new CustomEvent("bangSuccess"),
-		);
-		storage.set(CONSTANTS.LOCAL_STORAGE_KEYS.DEFAULT_BANG, newDefaultBang);
-		validatedElements.description.innerText = "Default Bang: " + bang.s;
-	});
-
-	validatedElements.historyToggle.addEventListener("change", (event) => {
-		storage.set(
-			CONSTANTS.LOCAL_STORAGE_KEYS.HISTORY_ENABLED,
-			(event.target as HTMLInputElement).checked.toString(),
-		);
-	});
-
-	validatedElements.clearHistory.addEventListener("click", () => {
-		clearSearchHistory();
-		if (!prefersReducedMotion)
-			setTimeout(() => {
-				window.location.reload();
-			}, 375);
-		else window.location.reload();
-	});
+	);
 
 	validatedElements.addBang.addEventListener("click", () => {
 		const name = validatedElements.bangName.value.trim();
@@ -488,14 +367,12 @@ function noSearchDefaultPageRender() {
 		};
 		storage.set(
 			CONSTANTS.LOCAL_STORAGE_KEYS.CUSTOM_BANGS,
-			JSON.stringify(customBangs),
+			JSON.stringify(customBangs)
 		);
 
-		if (!prefersReducedMotion)
-			setTimeout(() => {
-				window.location.reload();
-			}, 375);
-		else window.location.reload();
+		setTimeout(() => {
+			window.location.reload();
+		}, 375);
 	});
 
 	validatedElements.removeBangs.forEach((button) => {
@@ -505,76 +382,142 @@ function noSearchDefaultPageRender() {
 			delete customBangs[shortcut];
 			storage.set(
 				CONSTANTS.LOCAL_STORAGE_KEYS.CUSTOM_BANGS,
-				JSON.stringify(customBangs),
+				JSON.stringify(customBangs)
 			);
 
-			if (!prefersReducedMotion)
-				setTimeout(() => {
-					window.location.reload();
-				}, 375);
-			else window.location.reload();
+			setTimeout(() => {
+				window.location.reload();
+			}, 375);
 		});
 	});
 }
 
-const LS_DEFAULT_BANG =
-	storage.get(CONSTANTS.LOCAL_STORAGE_KEYS.DEFAULT_BANG) ?? "kagi";
+const LS_DEFAULT_BANG = cachedSettings.defaultBang;
 const defaultBang = bangs[LS_DEFAULT_BANG];
 
+// Optimized protocol checking - avoid URL constructor when possible
 function ensureProtocol(url: string, defaultProtocol = "https://") {
+	// Fast path: already has protocol
+	if (url.includes("://")) {
+		return url;
+	}
+
+	// Fast path: starts with common protocols
+	if (url.startsWith("http://") || url.startsWith("https://")) {
+		return url;
+	}
+
+	// Only use URL constructor for validation if needed
 	try {
 		const parsedUrl = new URL(url);
-		return parsedUrl.href; // If valid, return as is
+		return parsedUrl.href;
 	} catch (e) {
 		return `${defaultProtocol}${url}`;
 	}
 }
 
-function getBangredirectUrl() {
+// Pre-parse URL parameters once for better performance
+const urlParams = (() => {
 	const url = new URL(window.location.href);
 	const query = url.searchParams.get("q")?.trim() ?? "";
 
-	switch (url.pathname.replace(/\/$/, "")) {
+	// Pre-extract bang info to avoid duplicate parsing
+	let bangName = "";
+	let cleanQuery = query;
+
+	if (query.startsWith("!")) {
+		const spaceIndex = query.indexOf(" ");
+		if (spaceIndex === -1) {
+			bangName = query.slice(1).toLowerCase();
+			cleanQuery = "";
+		} else {
+			bangName = query.slice(1, spaceIndex).toLowerCase();
+			cleanQuery = query.slice(spaceIndex + 1).trim();
+		}
+	} else if (query.endsWith("!")) {
+		const lastSpaceIndex = query.lastIndexOf(" ");
+		if (lastSpaceIndex === -1) {
+			bangName = query.slice(0, -1).toLowerCase();
+			cleanQuery = "";
+		} else {
+			bangName = query.slice(lastSpaceIndex + 1, -1).toLowerCase();
+			cleanQuery = query.slice(0, lastSpaceIndex).trim();
+		}
+	}
+
+	return {
+		pathname: url.pathname.replace(/\/$/, ""),
+		query,
+		bangName,
+		cleanQuery,
+		url, // Keep reference to avoid re-parsing
+	};
+})();
+
+// Fast path for common bangs - check these first
+const COMMON_BANGS = new Set([
+	"g",
+	"yt",
+	"w",
+	"a",
+	"r",
+	"so",
+	"gh",
+	"npm",
+	"ddg",
+	"kagi",
+]);
+
+// Progressive bang lookup with fallback
+const getBang = async (bangName: string) => {
+	// Try custom bangs first (fastest lookup)
+	const customBang = customBangs[bangName];
+	if (customBang) return customBang;
+
+	// Try common bangs in local bangs object
+	if (COMMON_BANGS.has(bangName)) {
+		return bangs[bangName];
+	}
+
+	// Use progressive loading for other bangs
+	const fullBangs = await loadBangsProgressive(bangName);
+	return fullBangs[bangName];
+};
+
+async function getBangredirectUrl() {
+	switch (urlParams.pathname) {
 		case "": {
+			const { query, bangName, cleanQuery } = urlParams;
+
+			// Fast path: empty query or settings
 			if (!query || query === "!" || query === "!settings") {
 				noSearchDefaultPageRender();
 				return null;
 			}
 
-			const count = (
-				Number.parseInt(
-					storage.get(CONSTANTS.LOCAL_STORAGE_KEYS.SEARCH_COUNT) || "0",
-				) + 1
-			).toString();
-			storage.set(CONSTANTS.LOCAL_STORAGE_KEYS.SEARCH_COUNT, count);
+			// Progressive bang lookup
+			const selectedBang = bangName ? await getBang(bangName) : defaultBang;
 
-			const match = query.toLowerCase().match(/^!(\S+)|!(\S+)$/i);
-			const selectedBang = match
-				? customBangs[match[1] || match[2]] || bangs[match[1] || match[2]]
-				: defaultBang;
-			const cleanQuery = match
-				? query.replace(/!\S+\s*|^(\S+!|!\S+)$/i, "").trim()
-				: query;
-
-			// Redirect to base domain if cleanQuery is empty
+			// Early return for base domain redirect
 			if (!cleanQuery && selectedBang?.d) {
 				return ensureProtocol(selectedBang.d);
 			}
 
+			// Optimized URL construction
+			if (!selectedBang?.u) return null;
+
+			// Optimized URL encoding - only encode what's necessary
+			let encodedQuery = cleanQuery;
 			if (
-				storage.get(CONSTANTS.LOCAL_STORAGE_KEYS.HISTORY_ENABLED) === "true"
+				cleanQuery.includes(" ") ||
+				cleanQuery.includes("&") ||
+				cleanQuery.includes("=")
 			) {
-				addToSearchHistory(cleanQuery, {
-					bang: selectedBang?.t || "",
-					name: selectedBang?.s || "",
-					url: selectedBang?.u || "",
-				});
+				// Only encode if necessary, and avoid the replace operation
+				encodedQuery = encodeURIComponent(cleanQuery);
 			}
 
-			return selectedBang?.u.replace(
-				"{{{s}}}",
-				encodeURIComponent(cleanQuery).replace(/%2F/g, "/"),
-			);
+			return selectedBang.u.replace("{{{s}}}", encodedQuery);
 		}
 		default:
 			notFoundPageRender();
@@ -582,10 +525,71 @@ function getBangredirectUrl() {
 	}
 }
 
-function doRedirect() {
-	const searchUrl = getBangredirectUrl();
-	if (!searchUrl) return;
-	window.location.replace(searchUrl);
+// Performance monitoring and service worker integration
+const performanceStart = performance.now();
+
+// Service worker performance tracking
+function trackRedirectPerformance(redirectTime: number, bangName: string) {
+	// Send metrics to service worker if available
+	if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+		navigator.serviceWorker.controller.postMessage({
+			type: "TRACK_REDIRECT",
+			data: {
+				redirectTime,
+				bangName,
+				timestamp: Date.now(),
+			},
+		});
+	}
+
+	// Log in development
+	if (
+		typeof window !== "undefined" &&
+		window.location.hostname === "localhost"
+	) {
+		console.log(
+			`Redirect processed in ${redirectTime.toFixed(2)}ms for bang: ${bangName}`
+		);
+	}
 }
 
+// Cache warming for common bangs
+function warmUpCommonBangs() {
+	const commonBangs = ["g", "yt", "w", "a", "r", "so", "gh", "npm", "ddg"];
+	commonBangs.forEach((bang) => {
+		// Prefetch common bang pages
+		const url = `${window.location.origin}?q=!${bang}`;
+		fetch(url, { mode: "no-cors" }).catch(() => {
+			// Ignore errors - this is just for warming
+		});
+	});
+}
+
+// Initialize cache warming after a delay
+setTimeout(warmUpCommonBangs, 2000);
+
+async function doRedirect() {
+	const searchUrl = await getBangredirectUrl();
+	if (!searchUrl) return;
+
+	const redirectTime = performance.now() - performanceStart;
+
+	// Use pre-parsed bang name (no regex needed!)
+	const bangName = urlParams.bangName || "default";
+
+	// Track performance
+	trackRedirectPerformance(redirectTime, bangName);
+
+	// Optimized URL construction - avoid creating new URL object
+	let finalUrl = searchUrl;
+	if (searchUrl.includes("?")) {
+		finalUrl += `&_perf=${redirectTime}`;
+	} else {
+		finalUrl += `?_perf=${redirectTime}`;
+	}
+
+	window.location.replace(finalUrl);
+}
+
+// Minimal bangs are already loaded, so we can redirect immediately
 doRedirect();

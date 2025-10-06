@@ -1,4 +1,4 @@
-import { bangs } from "./bangs/hashbang.ts";
+import { bangs as defaultBangs } from "./bangs/hashbang.ts";
 import {
 	addToSearchHistory,
 	clearSearchHistory,
@@ -13,6 +13,19 @@ import "@fontsource/inter/latin-600.css";
 import "@fontsource/inter/latin-700.css";
 import "./global.css";
 import notFoundPageRender from "./404.ts";
+
+const bangs = Object.assign(
+	{
+		kagi: {
+			t: "Kagi",
+			s: "kagi",
+			u: "https://www.kagi.com/search?q={{{s}}}",
+			d: "https://www.kagi.com",
+			r: 0,
+		},
+	},
+	defaultBangs,
+);
 
 export const CONSTANTS = {
 	MAX_HISTORY: 500,
@@ -505,7 +518,7 @@ function noSearchDefaultPageRender() {
 }
 
 const LS_DEFAULT_BANG =
-	storage.get(CONSTANTS.LOCAL_STORAGE_KEYS.DEFAULT_BANG) ?? "ddg";
+	storage.get(CONSTANTS.LOCAL_STORAGE_KEYS.DEFAULT_BANG) ?? "kagi";
 const defaultBang = bangs[LS_DEFAULT_BANG];
 
 function ensureProtocol(url: string, defaultProtocol = "https://") {

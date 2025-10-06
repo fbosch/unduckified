@@ -1,5 +1,13 @@
 [
   {
+    "s": "kagi.com",
+    "d": "www.kagi.com",
+    "t": "kagi",
+    "u": "https://www.kagi.com/search?q={{{s}}}",
+    "c": "Online Services",
+    "sc": "Search"
+  },
+  {
     "s": "01net",
     "d": "www.01net.com",
     "t": "01net",
@@ -17824,12 +17832,12 @@
     "sc": "Games (specific)"
   },
   {
-      "s": "Decipher Genomics",
-      "d": "www.deciphergenomics.org",
-      "t": "decipher",
-      "u": "https://www.deciphergenomics.org/search?q={{{s}}}",
-      "c": "Research",
-      "sc": "Academic"
+    "s": "Decipher Genomics",
+    "d": "www.deciphergenomics.org",
+    "t": "decipher",
+    "u": "https://www.deciphergenomics.org/search?q={{{s}}}",
+    "c": "Research",
+    "sc": "Academic"
   },
   {
     "s": "DuckDuckGo",

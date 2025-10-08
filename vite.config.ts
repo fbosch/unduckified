@@ -31,6 +31,11 @@ export default defineConfig({
 			strategies: "injectManifest",
 			srcDir: "src",
 			filename: "sw-custom.ts",
+			// Enable service worker in development mode
+			devOptions: {
+				enabled: true,
+				type: "module",
+			},
 			workbox: {
 				// Minimal caching - focus on speed
 				globPatterns: ["**/*.{js,css,html,svg}"],

@@ -1,3 +1,4 @@
+/// <reference lib="webworker" />
 import { precacheAndRoute } from "workbox-precaching";
 import { clientsClaim } from "workbox-core";
 
@@ -32,12 +33,12 @@ const COMMON_BANGS: Record<string, string> = {
 	wiki: "https://en.wikipedia.org/wiki/{{{s}}}",
 };
 
-// Fast redirect handler - check cache first, then handle redirect
+// Fast redirect handler - only intercept bang redirect requests
 self.addEventListener("fetch", (event: any) => {
 	const url = new URL(event.request.url);
 
-	// Handle redirect requests
-	if (url.searchParams.has("q")) {
+	// Only handle requests to our domain with query parameters
+	if (url.hostname === self.location.hostname && url.searchParams.has("q")) {
 		const query = url.searchParams.get("q") || "";
 		const bangMatch = query.match(/^!(\w+)(?:\s+(.*))?$/);
 
@@ -57,45 +58,8 @@ self.addEventListener("fetch", (event: any) => {
 		}
 	}
 
-	// For all other requests, use offline-first approach
-	event.respondWith(
-		caches.match(event.request).then((response) => {
-			// Return cached version if available
-			if (response) {
-				return response;
-			}
-
-			// Otherwise fetch from network and cache it
-			return fetch(event.request)
-				.then((response) => {
-					// Don't cache redirects or non-successful responses
-					if (
-						!response ||
-						response.status !== 200 ||
-						response.type !== "basic"
-					) {
-						return response;
-					}
-
-					// Clone the response before caching
-					const responseToCache = response.clone();
-
-					// Cache the response for future use
-					caches.open("offline-cache").then((cache) => {
-						cache.put(event.request, responseToCache);
-					});
-
-					return response;
-				})
-				.catch(() => {
-					// If both cache and network fail, return a fallback
-					if (event.request.destination === "document") {
-						return caches.match("/index.html");
-					}
-					return new Response("Offline", { status: 503 });
-				});
-		})
-	);
+	// For all other requests, let them pass through normally
+	// This ensures JavaScript modules, CSS, and other assets load properly
 });
 
 // Skip waiting and claim clients for immediate activation

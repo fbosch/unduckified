@@ -1,244 +1,125 @@
 #!/usr/bin/env node
 
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+/**
+ * Test redirect speed by measuring time from request to redirect
+ */
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { chromium } from "playwright";
 
-const BANGS_DIR = path.join(__dirname, "../src/bangs");
+async function testRedirectSpeed() {
+	const browser = await chromium.launch();
+	const page = await browser.newPage();
 
-// Load bang files
-const minimalBangs = JSON.parse(
-	fs.readFileSync(path.join(BANGS_DIR, "bangs-minimal.json"), "utf8")
-);
-const essentialBangs = JSON.parse(
-	fs.readFileSync(path.join(BANGS_DIR, "bangs-essential.json"), "utf8")
-);
+	// Enable performance monitoring
+	await page.coverage.startJSCoverage();
 
-// Create hashbang objects
-const minimalHashbang = createHashbang(minimalBangs);
-const essentialHashbang = createHashbang(essentialBangs);
+	console.log("Testing redirect speed...\n");
 
-function createHashbang(bangs) {
-	const hashbang = {};
+	// Test 1: Service worker redirect
+	console.log("Test 1: Service worker redirect (!g test)");
+	const startTime1 = Date.now();
 
-	bangs.forEach((bang) => {
-		if (!bang.t || !bang.u || !bang.s || !bang.d) return;
+	try {
+		await page.goto("http://localhost:5173/?q=!g%20test%20search", {
+			waitUntil: "networkidle",
+			timeout: 10000,
+		});
 
-		hashbang[bang.t] = {
-			c: bang.c,
-			sc: bang.sc,
-			d: bang.d,
-			ad: bang.ad,
-			r: 0,
-			s: bang.s,
-			t: bang.t,
-			ts: bang.ts,
-			u: bang.u,
-			x: bang.x,
-			fmt: bang.fmt,
-			skip_tests: bang.skip_tests,
-		};
+		const endTime1 = Date.now();
+		const redirectTime1 = endTime1 - startTime1;
 
-		// Add additional triggers
-		if (bang.ts) {
-			bang.ts.forEach((trigger) => {
-				hashbang[trigger] = { ...hashbang[bang.t], t: trigger };
+		console.log(`✅ Service worker redirect: ${redirectTime1}ms`);
+		console.log(`   Final URL: ${page.url()}`);
+
+		// Check if we're on Google
+		if (page.url().includes("google.com")) {
+			console.log("   ✅ Successfully redirected to Google");
+		} else {
+			console.log("   ❌ Did not redirect to Google");
+		}
+	} catch (error) {
+		console.log(`❌ Service worker redirect failed: ${error.message}`);
+	}
+
+	// Test 2: Direct Google search (baseline)
+	console.log("\nTest 2: Direct Google search (baseline)");
+	const startTime2 = Date.now();
+
+	try {
+		await page.goto("https://www.google.com/search?q=test%20search", {
+			waitUntil: "networkidle",
+			timeout: 10000,
+		});
+
+		const endTime2 = Date.now();
+		const directTime2 = endTime2 - startTime2;
+
+		console.log(`✅ Direct Google search: ${directTime2}ms`);
+	} catch (error) {
+		console.log(`❌ Direct Google search failed: ${error.message}`);
+	}
+
+	// Test 3: DuckDuckGo bang redirect (comparison)
+	console.log("\nTest 3: DuckDuckGo bang redirect (comparison)");
+	const startTime3 = Date.now();
+
+	try {
+		await page.goto("https://duckduckgo.com/?q=!g%20test%20search", {
+			waitUntil: "networkidle",
+			timeout: 10000,
+		});
+
+		const endTime3 = Date.now();
+		const ddgTime3 = endTime3 - startTime3;
+
+		console.log(`✅ DuckDuckGo redirect: ${ddgTime3}ms`);
+		console.log(`   Final URL: ${page.url()}`);
+	} catch (error) {
+		console.log(`❌ DuckDuckGo redirect failed: ${error.message}`);
+	}
+
+	// Test 4: Multiple redirects to test consistency
+	console.log("\nTest 4: Multiple redirects (consistency test)");
+	const redirects = ["!g", "!yt", "!w", "!gh"];
+	const times = [];
+
+	for (const bang of redirects) {
+		const startTime = Date.now();
+
+		try {
+			await page.goto(`http://localhost:5173/?q=${bang}%20test`, {
+				waitUntil: "networkidle",
+				timeout: 5000,
 			});
-		}
-	});
 
-	return hashbang;
-}
+			const endTime = Date.now();
+			const redirectTime = endTime - startTime;
+			times.push(redirectTime);
 
-// Simulate the actual redirect flow (synchronous version)
-function simulateRedirect(query) {
-	const start = performance.now();
-
-	// Parse query (simulate URL parsing)
-	let bangName = "";
-	let cleanQuery = query;
-
-	if (query.startsWith("!")) {
-		const spaceIndex = query.indexOf(" ");
-		if (spaceIndex === -1) {
-			bangName = query.slice(1).toLowerCase();
-			cleanQuery = "";
-		} else {
-			bangName = query.slice(1, spaceIndex).toLowerCase();
-			cleanQuery = query.slice(spaceIndex + 1).trim();
-		}
-	} else if (query.endsWith("!")) {
-		const lastSpaceIndex = query.lastIndexOf(" ");
-		if (lastSpaceIndex === -1) {
-			bangName = query.slice(0, -1).toLowerCase();
-			cleanQuery = "";
-		} else {
-			bangName = query.slice(lastSpaceIndex + 1, -1).toLowerCase();
-			cleanQuery = query.slice(0, lastSpaceIndex).trim();
+			console.log(`   ${bang}: ${redirectTime}ms`);
+		} catch (error) {
+			console.log(`   ${bang}: ❌ Failed (${error.message})`);
 		}
 	}
 
-	// Fast synchronous bang lookup (like our new implementation)
-	let selectedBang = null;
+	if (times.length > 0) {
+		const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+		const minTime = Math.min(...times);
+		const maxTime = Math.max(...times);
 
-	// Try minimal bangs first (instant)
-	if (minimalHashbang[bangName]) {
-		selectedBang = minimalHashbang[bangName];
-	} else if (essentialHashbang[bangName]) {
-		selectedBang = essentialHashbang[bangName];
+		console.log(`\n📊 Redirect Performance Summary:`);
+		console.log(`   Average: ${avgTime.toFixed(1)}ms`);
+		console.log(`   Min: ${minTime}ms`);
+		console.log(`   Max: ${maxTime}ms`);
+		console.log(
+			`   Consistency: ${(((maxTime - minTime) / avgTime) * 100).toFixed(
+				1
+			)}% variance`
+		);
 	}
 
-	if (!selectedBang) {
-		return { success: false, time: performance.now() - start };
-	}
-
-	// Early return for base domain redirect
-	if (!cleanQuery && selectedBang.d) {
-		const finalUrl = ensureProtocol(selectedBang.d);
-		return { success: true, url: finalUrl, time: performance.now() - start };
-	}
-
-	// URL construction
-	if (!selectedBang.u) {
-		return { success: false, time: performance.now() - start };
-	}
-
-	// URL encoding - only encode what's necessary
-	let encodedQuery = cleanQuery;
-	if (
-		cleanQuery.includes(" ") ||
-		cleanQuery.includes("&") ||
-		cleanQuery.includes("=")
-	) {
-		encodedQuery = encodeURIComponent(cleanQuery);
-	}
-
-	const finalUrl = selectedBang.u.replace("{{{s}}}", encodedQuery);
-
-	return { success: true, url: finalUrl, time: performance.now() - start };
+	await browser.close();
 }
 
-function ensureProtocol(url) {
-	if (url.startsWith("http://") || url.startsWith("https://")) {
-		return url;
-	}
-	return "https://" + url;
-}
-
-// Test cases
-const testQueries = [
-	"!g hello world",
-	"!yt how to code",
-	"!w javascript",
-	"!a laptop",
-	"!r programming",
-	"!so react hooks",
-	"!gh facebook/react",
-	"!npm lodash",
-	"!steam",
-	"!twitch",
-	"!discord",
-	"!aws",
-	"!docker",
-	"!kubernetes",
-	"!react",
-	"!vue",
-	"!angular",
-	"!nodejs",
-	"!python",
-	"!java",
-	"!rust",
-	"!go",
-	"!php",
-	"!ruby",
-	"!swift",
-	"!vscode",
-	"!atom",
-	"!sublime",
-	"!vim",
-	"!emacs",
-];
-
-console.log("🚀 Redirect Speed Test (Synchronous)\n");
-
-// Test individual redirects
-console.log("1️⃣ Individual Redirect Performance:");
-const results = [];
-for (const query of testQueries) {
-	const result = simulateRedirect(query);
-	results.push(result);
-	if (result.success) {
-		console.log(`"${query}": ✅ ${result.time.toFixed(6)}ms -> ${result.url}`);
-	} else {
-		console.log(`"${query}": ❌ ${result.time.toFixed(6)}ms`);
-	}
-}
-
-// Test batch performance
-console.log("\n2️⃣ Batch Performance (10,000 iterations):");
-const batchStart = performance.now();
-for (let i = 0; i < 10000; i++) {
-	for (const query of testQueries) {
-		simulateRedirect(query);
-	}
-}
-const batchEnd = performance.now();
-const batchTime = batchEnd - batchStart;
-
-console.log(`Total time: ${batchTime.toFixed(2)}ms`);
-console.log(
-	`Per redirect: ${(batchTime / (10000 * testQueries.length)).toFixed(6)}ms`
-);
-console.log(
-	`Per second: ${Math.round(
-		(10000 * testQueries.length) / (batchTime / 1000)
-	)} redirects/sec`
-);
-
-// Performance statistics
-console.log("\n3️⃣ Performance Statistics:");
-const times = results.map((r) => r.time);
-const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
-const maxTime = Math.max(...times);
-const minTime = Math.min(...times);
-const successCount = results.filter((r) => r.success).length;
-
-console.log(`Average time: ${avgTime.toFixed(6)}ms`);
-console.log(`Fastest: ${minTime.toFixed(6)}ms`);
-console.log(`Slowest: ${maxTime.toFixed(6)}ms`);
-console.log(
-	`Success rate: ${successCount}/${testQueries.length} (${(
-		(successCount / testQueries.length) *
-		100
-	).toFixed(1)}%)`
-);
-
-// Performance assessment
-console.log("\n4️⃣ Performance Assessment:");
-if (avgTime < 0.001) {
-	console.log("✅ Excellent - redirects are extremely fast");
-} else if (avgTime < 0.005) {
-	console.log("✅ Very good - redirects are very fast");
-} else if (avgTime < 0.01) {
-	console.log("✅ Good - redirects are fast");
-} else if (avgTime < 0.05) {
-	console.log("⚠️  Acceptable - redirects are reasonably fast");
-} else {
-	console.log("❌ Slow - redirects need optimization");
-}
-
-console.log(`\n🎯 Summary:`);
-console.log(`- Average redirect time: ${avgTime.toFixed(6)}ms`);
-console.log(
-	`- Throughput: ${Math.round(
-		(10000 * testQueries.length) / (batchTime / 1000)
-	)} redirects/sec`
-);
-console.log(
-	`- Success rate: ${((successCount / testQueries.length) * 100).toFixed(1)}%`
-);
-
-console.log("\n✅ Redirect speed test complete!");
+// Run the test
+testRedirectSpeed().catch(console.error);

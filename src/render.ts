@@ -454,23 +454,30 @@ export async function renderDefaultPage() {
 	updateDescription(LS_DEFAULT_BANG);
 
 	// Set initial URL value
-	validatedElements.urlInput.value = `${window.location.protocol}//${window.location.host}?q=%s`;
+	if (validatedElements.urlInput) {
+		validatedElements.urlInput.value = `${window.location.protocol}//${window.location.host}?q=%s`;
+	}
 
 	// Event listeners
-	validatedElements.copyButton.addEventListener("click", async () => {
-		await navigator.clipboard.writeText(validatedElements.urlInput.value);
-		validatedElements.copyIcon.src = "/clipboard-check.svg";
-		validatedElements.copyInput.classList.add("flash-white");
+	validatedElements.copyButton?.addEventListener("click", async () => {
+		await navigator.clipboard.writeText(
+			validatedElements.urlInput?.value || ""
+		);
+		if (validatedElements.copyIcon)
+			validatedElements.copyIcon.src = "/clipboard-check.svg";
+		validatedElements.copyInput?.classList.add("flash-white");
 
 		setTimeout(() => {
-			validatedElements.copyInput.classList.remove("flash-white");
-			validatedElements.copyIcon.src = "/clipboard.svg";
+			validatedElements.copyInput?.classList.remove("flash-white");
+			if (validatedElements.copyIcon)
+				validatedElements.copyIcon.src = "/clipboard.svg";
 		}, 375);
 	});
 
-	validatedElements.settingsButton.addEventListener("click", () => {
-		validatedElements.settingsButton.classList.add("rotate");
-		validatedElements.modal.style.display = "block";
+	validatedElements.settingsButton?.addEventListener("click", () => {
+		validatedElements.settingsButton?.classList.add("rotate");
+		if (validatedElements.modal)
+			validatedElements.modal.style.display = "block";
 	});
 
 	validatedElements.closeModal?.addEventListener("click", () => {
@@ -479,15 +486,16 @@ export async function renderDefaultPage() {
 
 	window.addEventListener("click", (event) => {
 		if (event.target === validatedElements.modal) {
-			validatedElements.closeModal?.dispatchEvent(new Event("closed"));
+			if (validatedElements.closeModal)
+				validatedElements.closeModal.dispatchEvent(new Event("closed"));
 		}
 	});
 
 	validatedElements.closeModal?.addEventListener("closed", () => {
-		validatedElements.modal.style.display = "none";
+		if (validatedElements.modal) validatedElements.modal.style.display = "none";
 	});
 
-	validatedElements.defaultBangSelect.addEventListener("change", (event) => {
+	validatedElements.defaultBangSelect?.addEventListener("change", (event) => {
 		const newDefaultBang = (event.target as HTMLInputElement).value.replace(
 			/^!+/,
 			""
@@ -495,27 +503,30 @@ export async function renderDefaultPage() {
 		const bang = bangs[newDefaultBang] || customBangs[newDefaultBang];
 
 		if (!bang) {
-			validatedElements.defaultBangSelect.value = LS_DEFAULT_BANG;
-			validatedElements.defaultBangSelect.classList.add("shake", "flash-red");
+			if (validatedElements.defaultBangSelect)
+				validatedElements.defaultBangSelect.value = LS_DEFAULT_BANG;
+			validatedElements.defaultBangSelect?.classList.add("shake", "flash-red");
 			setTimeout(() => {
-				validatedElements.defaultBangSelect.classList.remove(
-					"shake",
-					"flash-red"
-				);
+				if (validatedElements.defaultBangSelect)
+					validatedElements.defaultBangSelect.classList.remove(
+						"shake",
+						"flash-red"
+					);
 			}, 300);
 			return;
 		}
 		storage.set("defaultBang", newDefaultBang);
-		validatedElements.description.innerText = "Default Bang: " + bang.s;
+		if (validatedElements.description)
+			validatedElements.description.innerText = "Default Bang: " + bang.s;
 	});
 
-	validatedElements.addBang.addEventListener("click", () => {
-		const name = validatedElements.bangName.value.trim();
-		const shortcut = validatedElements.bangShortcut.value
+	validatedElements.addBang?.addEventListener("click", () => {
+		const name = validatedElements.bangName?.value.trim();
+		const shortcut = validatedElements.bangShortcut?.value
 			.trim()
 			.replace(/^!+/, "");
-		const searchUrl = validatedElements.bangSearchUrl.value.trim();
-		const baseUrl = validatedElements.bangBaseUrl.value.trim();
+		const searchUrl = validatedElements.bangSearchUrl?.value.trim();
+		const baseUrl = validatedElements.bangBaseUrl?.value.trim();
 
 		if (!name || !searchUrl || !baseUrl || !shortcut) return;
 

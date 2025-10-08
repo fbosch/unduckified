@@ -2,10 +2,20 @@ import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+	// Ensure TypeScript is properly handled
+	esbuild: {
+		target: "es2022",
+	},
 	build: {
+		// Ensure TypeScript files are compiled to JavaScript
+		target: "es2022",
 		// Optimize bundle size
 		rollupOptions: {
 			output: {
+				// Ensure all output files have .js extension
+				chunkFileNames: "assets/[name]-[hash].js",
+				entryFileNames: "assets/[name]-[hash].js",
+				assetFileNames: "assets/[name]-[hash].[ext]",
 				manualChunks: {
 					// Split bangs data into separate chunk
 					bangs: ["./src/bangs/hashbang.ts"],
@@ -24,6 +34,10 @@ export default defineConfig({
 		},
 		// Increase chunk size warning limit
 		chunkSizeWarningLimit: 3000,
+		// Ensure source maps are not included in production
+		sourcemap: false,
+		// Force JavaScript output
+		lib: false,
 	},
 	plugins: [
 		VitePWA({
@@ -60,7 +74,7 @@ export default defineConfig({
 				start_url: "/",
 				icons: [
 					{
-						src: "/goose.gif",
+						src: "/raven.png",
 						sizes: "16x16",
 						type: "image/gif",
 					},

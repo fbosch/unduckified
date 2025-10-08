@@ -1,5 +1,5 @@
 // Page rendering module - loaded asynchronously only when needed
-import { storage } from "./libs.ts";
+import { storage } from "./libs";
 
 const LS_DEFAULT_BANG = storage.get("defaultBang") || "kagi";
 
@@ -14,7 +14,7 @@ const createTemplate = ({
 	<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;">
 		<header style="position: absolute; top: 1rem; width: 100%;">
 			<div style="display: flex; justify-content: flex-end; padding: 0 1rem;">
-				<button class="settings-button">
+				<button class="settings-button icon-button">
 					<img src="/gear.svg" alt="Settings" class="settings" />
 				</button>
 			</div>
@@ -29,7 +29,7 @@ const createTemplate = ({
 					value="https://unduck.link?q=%s"
 					readonly
 				/>
-				<button class="copy-button">
+				<button class="copy-button icon-button">
 					<img src="/clipboard.svg" alt="Copy" />
 				</button>
 			</div>
@@ -106,7 +106,7 @@ function injectStyles() {
 			--bg-color-secondary: #f5f5f5;
 			--bg-color-hover: #f0f0f0;
 			--bg-color-active: #e5e5e5;
-			--bg-color-danger: #e9808a;
+			--danger-color: #e9808a;
 			--border-color: #ddd;
 		}
 		@media (prefers-color-scheme: dark) {
@@ -118,7 +118,7 @@ function injectStyles() {
 				--bg-color-secondary: #1e1e1e;
 				--bg-color-hover: #2a2a2a;
 				--bg-color-active: #333;
-				--bg-color-danger: #f15f6d;
+				--danger-color: #f15f6d;
 				--border-color: #444;
 			}
 		}
@@ -128,7 +128,7 @@ function injectStyles() {
 			box-sizing: border-box;
 		}
 		body {
-			font-family: system-ui, sans-serif;
+			font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 			line-height: 1.5;
 			color: var(--text-color);
 			background-color: var(--bg-color);
@@ -318,7 +318,7 @@ function injectStyles() {
 			word-break: break-all;
 		}
 		.remove-bang {
-			background: var(--bg-color-danger);
+			background: var(--danger-color);
 			color: white;
 			border: none;
 			padding: 4px 8px;
@@ -334,7 +334,7 @@ function injectStyles() {
 			transition: background-color 0.3s ease;
 		}
 		.flash-red {
-			background-color: var(--bg-color-danger) !important;
+			background-color: var(--danger-color) !important;
 			transition: background-color 0.3s ease;
 		}
 		.shake {
@@ -395,7 +395,7 @@ export async function renderDefaultPage() {
 	if (!app) throw new Error("App element not found");
 
 	// Load bangs for settings
-	const { bangs } = await import("./bangs/hashbang.ts");
+	const { bangs } = await import("./bangs/hashbang");
 	const rawCustomBangs: Record<string, any> =
 		(storage.get("customBangs") as unknown as Record<string, any>) || {};
 

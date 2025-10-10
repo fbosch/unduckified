@@ -9031,7 +9031,7 @@
     "ts": [
       "birds"
     ],
-    "u": "https://www.allaboutbirds.org/search/?q={{{s}}}",
+    "u": "https://www.allaboutbirds.org/news/search/?q={{{s}}}",
     "c": "Research",
     "sc": "Reference (science)"
   },
@@ -17759,12 +17759,12 @@
     "sc": "Games (specific)"
   },
   {
-      "s": "Decipher Genomics",
-      "d": "www.deciphergenomics.org",
-      "t": "decipher",
-      "u": "https://www.deciphergenomics.org/search?q={{{s}}}",
-      "c": "Research",
-      "sc": "Academic"
+    "s": "Decipher Genomics",
+    "d": "www.deciphergenomics.org",
+    "t": "decipher",
+    "u": "https://www.deciphergenomics.org/search?q={{{s}}}",
+    "c": "Research",
+    "sc": "Academic"
   },
   {
     "s": "DuckDuckGo",
@@ -36982,9 +36982,9 @@
   },
   {
     "s": "Twitter Hashtags",
-    "d": "twitter.com",
+    "d": "x.com",
     "t": "hashtag",
-    "u": "https://twitter.com/search?q=\\#{{{s}}}",
+    "u": "https://x.com/search?q=\\#{{{s}}}",
     "c": "Online Services",
     "sc": "Social"
   },
@@ -61668,6 +61668,7 @@
   {
     "s": "PHP.net",
     "d": "secure.php.net",
+    "ad": "php.net",
     "t": "phpnet",
     "ts": [
       "php"
@@ -65088,23 +65089,34 @@
     "sc": "Forum"
   },
   {
-    "s": "Qt Documentation",
-    "d": "doc.qt.io",
+    "s": "Qt 4 Documentation",
+    "d": "kagi.com",
+    "ad": "doc.qt.io/archives/qt-4.8/",
     "t": "qt4",
-    "u": "https://doc.qt.io/qt-4.8/search-results.html?q={{{s}}}",
+    "u": "/search?q={{{s}}}+site:doc.qt.io/archives/qt-4.8/",
     "c": "Tech",
     "sc": "Libraries/Frameworks"
   },
   {
     "s": "Qt 5 Documentation",
-    "d": "doc.qt.io",
+    "d": "kagi.com",
+    "ad": "doc.qt.io/archives/qt-5.15/",
     "t": "qt5",
+    "u": "/search?q={{{s}}}+site:doc.qt.io/archives/qt-5.15/",
+    "c": "Tech",
+    "sc": "Libraries/Frameworks"
+  },
+  {
+    "s": "Qt 6 Documentation",
+    "d": "kagi.com",
+    "ad": "doc.qt.io/qt-6/",
+    "t": "qt6",
     "ts": [
       "qt"
     ],
-    "u": "https://doc.qt.io/qt-5/search-results.html?q={{{s}}}",
+    "u": "/search?q={{{s}}}+site:doc.qt.io/qt-6/",
     "c": "Tech",
-    "sc": "Programming"
+    "sc": "Libraries/Frameworks"
   },
   {
     "s": "Qualtrics Support",
@@ -65825,13 +65837,12 @@
   },
   {
     "s": "Current ruby docs",
-    "d": "www.google.com",
-    "ad": "docs.ruby-lang.org",
+    "d": "docs.ruby-lang.org",
     "t": "rb",
     "ts": [
       "ruby"
     ],
-    "u": "https://www.google.com/cse?q={{{s}}}&cx=013598269713424429640:g5orptiw95w&ie=UTF-8",
+    "u": "https://docs.ruby-lang.org/en/master/?q={{{s}}}",
     "c": "Tech",
     "sc": "Programming"
   },
@@ -80211,19 +80222,6 @@
     "sc": "International"
   },
   {
-    "s": "Twitter",
-    "d": "twitter.com",
-    "t": "twitter",
-    "ts": [
-      "twit",
-      "twid",
-      "tweet"
-    ],
-    "u": "https://twitter.com/search?q={{{s}}}",
-    "c": "Online Services",
-    "sc": "Social"
-  },
-  {
     "s": "Twitch game search",
     "d": "www.twitch.tv",
     "t": "twg",
@@ -80295,12 +80293,13 @@
   },
   {
     "s": "Twitter User",
-    "d": "twitter.com",
+    "d": "x.com",
     "t": "twitters",
     "ts": [
-      "twitteruser"
+      "twitteruser",
+      "xuser"
     ],
-    "u": "https://twitter.com/{{{s}}}",
+    "u": "https://x.com/{{{s}}}",
     "c": "Online Services",
     "sc": "Social"
   },
@@ -80322,9 +80321,9 @@
   },
   {
     "s": "Twitter Latest",
-    "d": "twitter.com",
+    "d": "x.com",
     "t": "twl",
-    "u": "https://twitter.com/search?f=tweets&vertical=news&q={{{s}}}",
+    "u": "https://x.com/search?f=tweets&vertical=news&q={{{s}}}",
     "c": "Online Services",
     "sc": "Search (Real-time)"
   },
@@ -80377,9 +80376,9 @@
   },
   {
     "s": "Twitter users",
-    "d": "twitter.com",
+    "d": "x.com",
     "t": "twuser",
-    "u": "https://twitter.com/search/users?q={{{s}}}",
+    "u": "https://x.com/search/users?q={{{s}}}",
     "c": "Online Services",
     "sc": "Social"
   },
@@ -88310,6 +88309,12 @@
     "s": "X",
     "d": "x.com",
     "t": "x",
+    "ts": [
+      "twitter",
+      "twit",
+      "twid",
+      "tweet"
+    ],
     "u": "https://x.com/search?q={{{s}}}",
     "c": "Online Services",
     "sc": "Social"

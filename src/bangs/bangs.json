@@ -13279,7 +13279,7 @@
     "ts": [
       "cgpt"
     ],
-    "u": "https://chatgpt.com/?q={{{s}}}",
+    "u": "https://chatgpt.com/?prompt={{{s}}}",
     "c": "Online Services",
     "sc": "AI Chatbots"
   },
@@ -27812,6 +27812,14 @@
     "sc": "Learning"
   },
   {
+    "s": "FOSDEM",
+    "d": "fosdem.org",
+    "t": "fosdem",
+    "u": "https://fosdem.org/2026/search/?q={{{s}}}",
+    "c": "Online Services",
+    "sc": "Events"
+  },
+  {
     "s": "FossHub",
     "d": "www.fosshub.com",
     "t": "fhub",
@@ -36815,7 +36823,12 @@
     ],
     "u": "https://hn.algolia.com/?q={{{s}}}",
     "c": "News",
-    "sc": "Aggregators"
+    "sc": "Aggregators",
+    "fmt": [
+      "open_snap_domain",
+      "url_encode_placeholder",
+      "url_encode_space_to_plus"
+    ]
   },
   {
     "s": "Hackology",
@@ -37166,6 +37179,17 @@
     "u": "https://www.homebrewtalk.com/search/?keyword={{{s}}}",
     "c": "Entertainment",
     "sc": "Forum"
+  },
+  {
+    "s": "Huberman Lab",
+    "d": "www.hubermanlab.com",
+    "t": "hblb",
+    "ts": [
+      "hubermanlab"
+    ],
+    "u": "https://www.hubermanlab.com/search-results?q={{{s}}}",
+    "c": "Entertainment",
+    "sc": "Audio (Podcast)"
   },
   {
     "s": "Hochschulbibliothekszentrum des Landes Nordrhein-Westfalen",
@@ -54618,7 +54642,7 @@
     "s": "namuwiki",
     "d": "namu.wiki",
     "t": "namu",
-    "u": "https://namu.wiki/Search?q={{{s}}}",
+    "u": "https://namu.wiki/Go?q={{{s}}}",
     "c": "Research",
     "sc": "Reference"
   },
@@ -56800,10 +56824,16 @@
   {
     "s": "Nixpkgs Repository",
     "d": "github.com",
+    "ad": "github.com/NixOS/nixpkgs",
     "t": "nr",
     "u": "https://github.com/NixOS/nixpkgs/search?q={{{s}}}",
     "c": "Tech",
-    "sc": "Sysadmin (packages)"
+    "sc": "Sysadmin (packages)",
+    "fmt": [
+      "url_encode_placeholder",
+      "url_encode_space_to_plus",
+      "open_snap_domain"
+    ]
   },
   {
     "s": "NASDAQ Real Time Quotes",
@@ -61740,13 +61770,13 @@
   },
   {
     "s": "PHP.net",
-    "d": "secure.php.net",
+    "d": "www.php.net",
     "ad": "php.net",
     "t": "phpnet",
     "ts": [
       "php"
     ],
-    "u": "https://secure.php.net/manual-lookup.php?pattern={{{s}}}",
+    "u": "https://www.php.net/manual-lookup.php?pattern={{{s}}}",
     "c": "Tech",
     "sc": "Languages (php)"
   },
@@ -63240,9 +63270,9 @@
     "sc": "Online"
   },
   {
-    "s": "Incendar.com",
+    "s": "Incendar funko pop search",
     "d": "incendar.com",
-    "t": "pop",
+    "t": "fpop",
     "u": "https://incendar.com/funko_pop_search.php?search={{{s}}}",
     "c": "Entertainment",
     "sc": "TV"
@@ -69270,6 +69300,19 @@
     "sc": "Big box/department"
   },
   {
+    "s": "Mamont",
+    "d": "www.mmnt.ru",
+    "t": "mmnt",
+    "ts": [
+      "mamont",
+      "мамонт",
+      "ммнт"
+    ],
+    "u": "https://www.mmnt.ru/get?st={{{s}}}&in=w",
+    "c": "Online Services",
+    "sc": "Search"
+  },
+  {
     "s": "Sanakirja.org",
     "d": "www.sanakirja.org",
     "t": "sanakirja",
@@ -70766,7 +70809,9 @@
     "s": "SeriesGraph",
     "d": "seriesgraph.com",
     "t": "sgr",
-    "ts": ["seriesgraph"],
+    "ts": [
+      "seriesgraph"
+    ],
     "u": "https://seriesgraph.com/show/search/{{{s}}}",
     "c": "Entertainment",
     "sc": "TV"
